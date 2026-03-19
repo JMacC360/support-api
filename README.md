@@ -9,7 +9,7 @@
 
 ## About This API
 
-This API powers the support-ticketing system for CWPC (Company/Community/Customer With Professional Care). It is designed to handle the creation, management, and resolution of support tickets, enabling efficient communication between users and support staff.
+This API powers the support-ticketing system for Community Wireless and Power Corporation (CWPC). It is designed to handle the creation, management, and resolution of support tickets, enabling efficient communication between users and support staff.
 
 ### Background
 
