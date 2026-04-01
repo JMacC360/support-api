@@ -1,4 +1,11 @@
-<?php
+    'nextcloud' => [
+    'base_url' => env('NEXTCLOUD_BASE_URL'),
+    'storage_url' => env('NEXTCLOUD_STORAGE_URL'),
+    'username' => env('NEXTCLOUD_USERNAME'),
+    'password' => env('NEXTCLOUD_PASSWORD'),
+    'folder' => env('NEXTCLOUD_FOLDER', ''),
+    ],
+    <?php
 
 return [
 
@@ -35,4 +42,11 @@ return [
         ],
     ],
 
+    'nextcloud' => [
+        'base_url'    => env('NEXTCLOUD_BASE_URL'),
+        'storage_url' => env('NEXTCLOUD_STORAGE_URL'),
+        'username'    => env('NEXTCLOUD_USERNAME'),
+        'password'    => env('NEXTCLOUD_PASSWORD'),
+        'folder'      => env('NEXTCLOUD_FOLDER', 'uploads'),
+    ],
 ];
