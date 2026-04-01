@@ -88,4 +88,9 @@ class TicketController extends Controller{
         $ticket->load(['creator', 'assignee']);
         return response()->json($ticket);
     }
+
+    public function getThreads(Ticket $ticket)
+    {
+        return response()->json($ticket->threads()->with('user')->latest()->get());
+    }
 }

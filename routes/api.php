@@ -5,6 +5,7 @@ use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserRoleController;
 use App\Http\Controllers\TicketController;
+use App\Http\Controllers\TicketThreadController;
 use App\Http\Controllers\CategoryController;
 use Illuminate\Support\Facades\Route;
 
@@ -13,6 +14,7 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
+
 
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -45,6 +47,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('/tickets/{ticket}', [TicketController::class, 'update']);
     Route::patch('/tickets/{ticket}/status', [TicketController::class, 'updateStatus']);
     Route::delete('/tickets/{ticket}', [TicketController::class, 'destroy']);
+    Route::get('/tickets/{ticket}/all-threads', [TicketController::class, 'getThreads']);
 
     // Categories
     Route::get('/categories', [CategoryController::class, 'index']);
@@ -52,4 +55,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/categories/{category}', [CategoryController::class, 'show']);
     Route::put('/categories/{category}', [CategoryController::class, 'update']);
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
+
+    // Ticket Threads (comments/replies)
+    Route::get('/tickets/{ticket}/threads', [TicketThreadController::class, 'index']);
+    Route::post('/tickets/{ticket}/threads', [TicketThreadController::class, 'store']);
+    Route::get('/tickets/{ticket}/threads/{thread}', [TicketThreadController::class, 'show']);
+    Route::put('/tickets/{ticket}/threads/{thread}', [TicketThreadController::class, 'update']);
+    Route::delete('/tickets/{ticket}/threads/{thread}', [TicketThreadController::class, 'destroy']);
 });
