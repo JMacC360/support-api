@@ -10,7 +10,7 @@ it('can register a new user', function () {
         'password_confirmation' => 'password123',
     ])
         ->assertCreated()
-        ->assertJsonStructure(['user', 'access_token', 'token_type'])
+        ->assertJsonStructure(['user', 'role_names', 'access_token', 'token_type'])
         ->assertJsonPath('token_type', 'Bearer')
         ->assertJsonPath('user.name', 'John Doe')
         ->assertJsonPath('user.email', 'john@example.com');
@@ -70,7 +70,7 @@ it('can login with valid credentials', function () {
         'password' => 'password',
     ])
         ->assertSuccessful()
-        ->assertJsonStructure(['user', 'access_token', 'token_type'])
+        ->assertJsonStructure(['user', 'role_names', 'access_token', 'token_type'])
         ->assertJsonPath('token_type', 'Bearer')
         ->assertJsonPath('user.email', 'john@example.com');
 });
@@ -107,7 +107,8 @@ it('can fetch the authenticated user', function () {
     $this->actingAs($user)
         ->getJson('/api/me')
         ->assertSuccessful()
-        ->assertJsonPath('email', 'john@example.com');
+        ->assertJsonPath('user.email', 'john@example.com')
+        ->assertJsonStructure(['user', 'role_names']);
 });
 
 it('cannot fetch user when unauthenticated', function () {
@@ -121,8 +122,8 @@ it('does not expose password or remember_token on user responses', function () {
     $this->actingAs($user)
         ->getJson('/api/me')
         ->assertSuccessful()
-        ->assertJsonMissingPath('password')
-        ->assertJsonMissingPath('remember_token');
+        ->assertJsonMissingPath('user.password')
+        ->assertJsonMissingPath('user.remember_token');
 });
 
 it('can logout and invalidate the token', function () {
@@ -156,5 +157,5 @@ it('can register and then login with the same credentials', function () {
         'password' => 'secretpass',
     ])
         ->assertSuccessful()
-        ->assertJsonStructure(['user', 'access_token', 'token_type']);
+        ->assertJsonStructure(['user', 'role_names', 'access_token', 'token_type']);
 });

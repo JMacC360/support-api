@@ -15,6 +15,7 @@ class UpdateTicketThreadRequest extends FormRequest
     {
         return [
             'message' => ['sometimes', 'string'],
+            'internal_notes' => ['sometimes', 'nullable', 'string'],
             'attachments' => ['nullable', 'array'],
             'attachments.*' => ['file', 'mimes:jpeg,jpg,png,gif,bmp,svg,webp,pdf', 'max:51200'],
         ];

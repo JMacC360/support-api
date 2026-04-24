@@ -1,12 +1,15 @@
 <?php
 
+use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
-use App\Http\Controllers\UserRoleController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\TicketThreadController;
-use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\UserRoleController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes for authentication
@@ -15,9 +18,16 @@ Route::post('/register', [AuthController::class, 'register']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
 
-
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    // Users
+    Route::get('/users', [UserController::class, 'index']);
+    Route::post('/users', [UserController::class, 'store']);
+    Route::get('/users/{user}', [UserController::class, 'show']);
+    Route::put('/users/{user}', [UserController::class, 'update']);
+    Route::patch('/users/{user}/status', [UserController::class, 'updateStatus']);
+    Route::delete('/users/{user}', [UserController::class, 'destroy']);
 
     // Roles
     Route::get('/roles', [RoleController::class, 'index']);
@@ -48,6 +58,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::patch('/tickets/{ticket}/status', [TicketController::class, 'updateStatus']);
     Route::delete('/tickets/{ticket}', [TicketController::class, 'destroy']);
     Route::get('/tickets/{ticket}/all-threads', [TicketController::class, 'getThreads']);
+    Route::get('/tickets/{ticket}/activity-logs', [ActivityLogController::class, 'ticketIndex']);
+    Route::get('/activity-logs', [ActivityLogController::class, 'index']);
 
     // Categories
     Route::get('/categories', [CategoryController::class, 'index']);
@@ -62,4 +74,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/tickets/{ticket}/threads/{thread}', [TicketThreadController::class, 'show']);
     Route::put('/tickets/{ticket}/threads/{thread}', [TicketThreadController::class, 'update']);
     Route::delete('/tickets/{ticket}/threads/{thread}', [TicketThreadController::class, 'destroy']);
+
+    // Attachment proxy (for protected Nextcloud files)
+    Route::get('/attachments/proxy', [AttachmentController::class, 'proxy']);
 });

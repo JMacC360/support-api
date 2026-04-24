@@ -18,6 +18,8 @@ class UpdateTicketRequest extends FormRequest
             'description' => ['sometimes', 'string'],
             'category_id' => ['sometimes', 'exists:categories,id'],
             'priority' => ['sometimes', 'string', 'max:50'],
+            'existing_attachments' => ['nullable', 'array'],
+            'existing_attachments.*' => ['string'],
             'attachments' => ['nullable', 'array'],
             'attachments.*' => ['file', 'mimes:jpeg,jpg,png,gif,bmp,svg,webp,pdf', 'max:51200'],
             'created_by' => ['sometimes', 'exists:users,id'],
