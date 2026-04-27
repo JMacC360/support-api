@@ -2,6 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return "Nothing to see here.";
-});
+Route::get('/{any}', function () {
+    abort(403);
+})->where('any', '.*');
