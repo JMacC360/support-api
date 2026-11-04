@@ -8,6 +8,7 @@ use App\Http\Resources\PermissionResource;
 use App\Http\Resources\RoleResource;
 use App\Models\User;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Spatie\Permission\PermissionRegistrar;
 
 class UserRoleController extends Controller
 {
@@ -19,6 +20,8 @@ class UserRoleController extends Controller
     public function syncRoles(SyncRolesRequest $request, User $user): AnonymousResourceCollection
     {
         $user->syncRoles($request->validated('roles'));
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         return RoleResource::collection($user->load('roles.permissions')->roles);
     }
@@ -33,6 +36,8 @@ class UserRoleController extends Controller
     public function syncPermissions(SyncPermissionsRequest $request, User $user): AnonymousResourceCollection
     {
         $user->syncPermissions($request->validated('permissions'));
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         return PermissionResource::collection($user->getAllPermissions());
     }

@@ -9,6 +9,18 @@ uses(RefreshDatabase::class);
 beforeEach(function () {
     $this->user = User::factory()->create();
     $this->actingAs($this->user);
+
+    Permission::firstOrCreate(['name' => 'permission.view', 'guard_name' => 'api']);
+    Permission::firstOrCreate(['name' => 'permission.create', 'guard_name' => 'api']);
+    Permission::firstOrCreate(['name' => 'permission.update', 'guard_name' => 'api']);
+    Permission::firstOrCreate(['name' => 'permission.delete', 'guard_name' => 'api']);
+
+    $this->user->givePermissionTo([
+        'permission.view',
+        'permission.create',
+        'permission.update',
+        'permission.delete',
+    ]);
 });
 
 it('can list all permissions', function () {
@@ -17,8 +29,9 @@ it('can list all permissions', function () {
 
     $this->getJson('/api/permissions')
         ->assertSuccessful()
-        ->assertJsonCount(2, 'data')
-        ->assertJsonStructure(['data' => [['id', 'name', 'guard_name', 'created_at']]]);
+        ->assertJsonStructure(['data' => [['id', 'name', 'guard_name', 'created_at']]])
+        ->assertJsonFragment(['name' => 'user.view'])
+        ->assertJsonFragment(['name' => 'user.create']);
 });
 
 it('can create a permission', function () {

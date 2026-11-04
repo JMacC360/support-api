@@ -13,14 +13,53 @@ use Illuminate\Support\Facades\Auth;
 
 class TicketThreadController extends Controller
 {
-    public function index(Ticket $ticket)
+    public function index(Request $request, Ticket $ticket)
     {
-        return response()->json($ticket->threads()->with('user')->latest()->get());
+        $query = $ticket->threads()->with('user')->latest();
+
+        if (! $this->canViewInternalNotes($request)) {
+            $query->whereNull('internal_notes');
+        }
+
+        return response()->json($query->get());
     }
 
     public function store(StoreTicketThreadRequest $request, Ticket $ticket)
     {
         $validated = $request->validated();
+        $parentId = $validated['parent_id'] ?? null;
+        $parentThread = null;
+        if ($parentId !== null) {
+            $parentThread = TicketThread::query()
+                ->where('ticket_id', $ticket->id)
+                ->whereKey($parentId)
+                ->first();
+            if (! $parentThread) {
+                return response()->json([
+                    'message' => 'The selected parent thread is invalid for this ticket.',
+                ], 422);
+            }
+        }
+
+        $internalNotes = $validated['internal_notes'] ?? null;
+        $hasInternalNotes = is_string($internalNotes) && trim($internalNotes) !== '';
+
+        if ($parentThread?->internal_notes !== null) {
+            // Prevent permission bypass: replying under an internal note must be an internal note too.
+            if (! $this->canCreateInternalNotes($request)) {
+                return response()->json(['message' => 'You do not have permission to create internal notes.'], 403);
+            }
+            $internalNotes = $hasInternalNotes ? $internalNotes : $validated['message'];
+            $hasInternalNotes = true;
+        }
+
+        if ($hasInternalNotes && ! $this->canCreateInternalNotes($request)) {
+            return response()->json(['message' => 'You do not have permission to create internal notes.'], 403);
+        }
+        if (! $hasInternalNotes && ! $request->user()?->can('ticket.thread.create')) {
+            return response()->json(['message' => 'You do not have permission to create ticket replies.'], 403);
+        }
+
         $attachments = [];
         if ($request->hasFile('attachments')) {
             $nextcloud = new NextcloudService;
@@ -33,9 +72,10 @@ class TicketThreadController extends Controller
         }
         $thread = $ticket->threads()->create([
             'user_id' => Auth::id() ?? $request->user()->id,
+            'parent_id' => $parentThread?->id,
             'message' => $validated['message'],
             'attachments' => $attachments,
-            'internal_notes' => $validated['internal_notes'] ?? null,
+            'internal_notes' => $hasInternalNotes ? $internalNotes : null,
         ]);
         $this->logTicketThreadActivity(
             $request,
@@ -53,9 +93,13 @@ class TicketThreadController extends Controller
         return response()->json($thread, 201);
     }
 
-    public function show(Ticket $ticket, TicketThread $thread)
+    public function show(Request $request, Ticket $ticket, TicketThread $thread)
     {
         if ($thread->ticket_id !== $ticket->id) {
+            abort(404);
+        }
+
+        if ($thread->internal_notes !== null && ! $this->canViewInternalNotes($request)) {
             abort(404);
         }
 
@@ -67,9 +111,24 @@ class TicketThreadController extends Controller
         if ($thread->ticket_id !== $ticket->id) {
             abort(404);
         }
+
+        if ($thread->internal_notes !== null && ! $this->canViewInternalNotes($request)) {
+            abort(404);
+        }
+
         $validated = $request->validated();
+        $internalNotes = $validated['internal_notes'] ?? null;
+        $hasInternalNotes = is_string($internalNotes) && trim($internalNotes) !== '';
+        $touchesInternalNotes = array_key_exists('internal_notes', $validated);
+        if (($hasInternalNotes || ($thread->internal_notes !== null && $touchesInternalNotes)) && ! $this->canCreateInternalNotes($request)) {
+            return response()->json(['message' => 'You do not have permission to update internal notes.'], 403);
+        }
+
         $before = $thread->only(['message', 'internal_notes']);
         $data = $validated;
+        if ($touchesInternalNotes) {
+            $data['internal_notes'] = $hasInternalNotes ? $internalNotes : null;
+        }
         if ($request->hasFile('attachments')) {
             $nextcloud = new NextcloudService;
             $attachments = $thread->attachments ?? [];
@@ -104,6 +163,11 @@ class TicketThreadController extends Controller
         if ($thread->ticket_id !== $ticket->id) {
             abort(404);
         }
+
+        if ($thread->internal_notes !== null && ! $this->canViewInternalNotes($request)) {
+            abort(404);
+        }
+
         $threadId = $thread->id;
         $this->logTicketThreadActivity(
             $request,
@@ -134,5 +198,17 @@ class TicketThreadController extends Controller
             'description' => $description,
             'properties' => $properties,
         ]);
+    }
+
+    private function canViewInternalNotes(Request $request): bool
+    {
+        // If a user can create internal notes, they should also be able to view them.
+        return (bool) $request->user()?->can('ticket.thread.internal.view')
+            || (bool) $request->user()?->can('ticket.thread.internal.create');
+    }
+
+    private function canCreateInternalNotes(Request $request): bool
+    {
+        return (bool) $request->user()?->can('ticket.thread.internal.create');
     }
 }

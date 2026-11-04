@@ -9,6 +9,7 @@ use App\Http\Resources\RoleResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class RoleController extends Controller
 {
@@ -31,6 +32,8 @@ class RoleController extends Controller
         if (! empty($validated['permissions'])) {
             $role->syncPermissions($validated['permissions']);
         }
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         return new RoleResource($role->load('permissions'));
     }
@@ -57,6 +60,8 @@ class RoleController extends Controller
             $role->syncPermissions($validated['permissions'] ?? []);
         }
 
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
         return new RoleResource($role->load('permissions'));
     }
 
@@ -64,6 +69,8 @@ class RoleController extends Controller
     {
         $role = Role::findOrFail($id);
         $role->delete();
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         return response()->json(['message' => 'Role deleted successfully']);
     }

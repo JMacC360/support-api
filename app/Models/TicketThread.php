@@ -12,6 +12,7 @@ class TicketThread extends Model
     protected $fillable = [
         'ticket_id',
         'user_id',
+        'parent_id',
         'message',
         'attachments',
         'internal_notes',
@@ -29,5 +30,15 @@ class TicketThread extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function parent()
+    {
+        return $this->belongsTo(TicketThread::class, 'parent_id');
+    }
+
+    public function children()
+    {
+        return $this->hasMany(TicketThread::class, 'parent_id');
     }
 }

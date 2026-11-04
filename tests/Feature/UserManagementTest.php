@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
@@ -9,6 +10,18 @@ uses(RefreshDatabase::class);
 beforeEach(function () {
     $this->actor = User::factory()->create();
     $this->actingAs($this->actor);
+
+    Permission::firstOrCreate(['name' => 'user.view', 'guard_name' => 'api']);
+    Permission::firstOrCreate(['name' => 'user.create', 'guard_name' => 'api']);
+    Permission::firstOrCreate(['name' => 'user.update', 'guard_name' => 'api']);
+    Permission::firstOrCreate(['name' => 'user.delete', 'guard_name' => 'api']);
+
+    $this->actor->givePermissionTo([
+        'user.view',
+        'user.create',
+        'user.update',
+        'user.delete',
+    ]);
 });
 
 it('can list users', function () {

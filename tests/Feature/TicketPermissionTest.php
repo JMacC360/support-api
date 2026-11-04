@@ -235,4 +235,3 @@ it('shows internal notes on thread index with ticket.thread.internal.view', func
         ->assertSuccessful()
         ->assertJsonCount(2);
 });
-

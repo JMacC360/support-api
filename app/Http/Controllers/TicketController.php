@@ -164,9 +164,14 @@ class TicketController extends Controller
         return response()->json($ticket);
     }
 
-    public function getThreads(Ticket $ticket)
+    public function getThreads(Request $request, Ticket $ticket)
     {
-        return response()->json($ticket->threads()->with('user')->latest()->get());
+        $query = $ticket->threads()->with('user')->latest();
+        if (! $request->user()?->can('ticket.thread.internal.view') && ! $request->user()?->can('ticket.thread.internal.create')) {
+            $query->whereNull('internal_notes');
+        }
+
+        return response()->json($query->get());
     }
 
     private function logTicketActivity(

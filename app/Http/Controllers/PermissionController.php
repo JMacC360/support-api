@@ -8,6 +8,7 @@ use App\Http\Resources\PermissionResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\PermissionRegistrar;
 
 class PermissionController extends Controller
 {
@@ -26,6 +27,8 @@ class PermissionController extends Controller
             'name' => $validated['name'],
             'guard_name' => $validated['guard_name'] ?? 'api',
         ]);
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         return new PermissionResource($permission);
     }
@@ -48,6 +51,8 @@ class PermissionController extends Controller
             'guard_name' => $validated['guard_name'] ?? $permission->guard_name,
         ]);
 
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
         return new PermissionResource($permission);
     }
 
@@ -55,6 +60,8 @@ class PermissionController extends Controller
     {
         $permission = Permission::findOrFail($id);
         $permission->delete();
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         return response()->json(['message' => 'Permission deleted successfully']);
     }

@@ -21,7 +21,7 @@ class UpdateTicketRequest extends FormRequest
             'existing_attachments' => ['nullable', 'array'],
             'existing_attachments.*' => ['string'],
             'attachments' => ['nullable', 'array'],
-            'attachments.*' => ['file', 'mimes:jpeg,jpg,png,gif,bmp,svg,webp,pdf', 'max:51200'],
+            'attachments.*' => ['file', 'mimes:jpeg,jpg,png,gif,bmp,svg,webp,avif,heic,heif,pdf', 'max:51200'],
             'created_by' => ['sometimes', 'exists:users,id'],
             'assigned_to' => ['nullable', 'exists:users,id'],
         ];

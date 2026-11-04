@@ -10,7 +10,7 @@ it('can register a new user', function () {
         'password_confirmation' => 'password123',
     ])
         ->assertCreated()
-        ->assertJsonStructure(['user', 'role_names', 'access_token', 'token_type'])
+        ->assertJsonStructure(['user', 'role_names', 'permission_names', 'access_token', 'token_type'])
         ->assertJsonPath('token_type', 'Bearer')
         ->assertJsonPath('user.name', 'John Doe')
         ->assertJsonPath('user.email', 'john@example.com');
@@ -70,7 +70,7 @@ it('can login with valid credentials', function () {
         'password' => 'password',
     ])
         ->assertSuccessful()
-        ->assertJsonStructure(['user', 'role_names', 'access_token', 'token_type'])
+        ->assertJsonStructure(['user', 'role_names', 'permission_names', 'access_token', 'token_type'])
         ->assertJsonPath('token_type', 'Bearer')
         ->assertJsonPath('user.email', 'john@example.com');
 });
@@ -108,7 +108,7 @@ it('can fetch the authenticated user', function () {
         ->getJson('/api/me')
         ->assertSuccessful()
         ->assertJsonPath('user.email', 'john@example.com')
-        ->assertJsonStructure(['user', 'role_names']);
+        ->assertJsonStructure(['user', 'role_names', 'permission_names']);
 });
 
 it('cannot fetch user when unauthenticated', function () {
@@ -157,5 +157,5 @@ it('can register and then login with the same credentials', function () {
         'password' => 'secretpass',
     ])
         ->assertSuccessful()
-        ->assertJsonStructure(['user', 'role_names', 'access_token', 'token_type']);
+        ->assertJsonStructure(['user', 'role_names', 'permission_names', 'access_token', 'token_type']);
 });
