@@ -15,8 +15,10 @@ class StoreTicketThreadRequest extends FormRequest
     {
         return [
             'message' => ['required', 'string'],
+            'internal_notes' => ['nullable', 'string'],
+            'parent_id' => ['nullable', 'integer', 'exists:ticket_threads,id'],
             'attachments' => ['nullable', 'array'],
-            'attachments.*' => ['file', 'mimes:jpeg,jpg,png,gif,bmp,svg,webp,pdf', 'max:51200'],
+            'attachments.*' => ['file', 'mimes:jpeg,jpg,png,gif,bmp,svg,webp,avif,heic,heif,pdf', 'max:51200'],
         ];
     }
 }

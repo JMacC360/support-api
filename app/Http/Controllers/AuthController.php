@@ -23,6 +23,8 @@ class AuthController extends Controller
 
         return response()->json([
             'user' => $user,
+            'role_names' => $user->getRoleNames()->values(),
+            'permission_names' => $user->getAllPermissions()->pluck('name')->values(),
             'access_token' => $token,
             'token_type' => 'Bearer',
         ]);
@@ -30,7 +32,13 @@ class AuthController extends Controller
 
     public function me(): JsonResponse
     {
-        return response()->json(auth()->user());
+        $user = auth()->user();
+
+        return response()->json([
+            'user' => $user,
+            'role_names' => $user->getRoleNames()->values(),
+            'permission_names' => $user->getAllPermissions()->pluck('name')->values(),
+        ]);
     }
 
     public function register(RegisterRequest $request): JsonResponse
@@ -47,6 +55,8 @@ class AuthController extends Controller
 
         return response()->json([
             'user' => $user,
+            'role_names' => $user->getRoleNames()->values(),
+            'permission_names' => $user->getAllPermissions()->pluck('name')->values(),
             'access_token' => $token,
             'token_type' => 'Bearer',
         ], 201);

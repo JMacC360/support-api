@@ -9,38 +9,42 @@ use Illuminate\Support\Facades\Log;
 class NextcloudService
 {
     private string $baseUrl;
+
     private string $storageUrl;
+
     private string $username;
+
     private string $password;
+
     private string $folder;
 
     public function __construct()
     {
-        $this->baseUrl    = rtrim(config('services.nextcloud.base_url'), '/');
-        $this->storageUrl = rtrim(config('services.nextcloud.storage_url'), '/');
-        $this->username   = config('services.nextcloud.username');
-        $this->password   = config('services.nextcloud.password');
-        $this->folder     = config('services.nextcloud.folder');
+        $this->baseUrl = rtrim((string) config('services.nextcloud.base_url'), '/');
+        $this->storageUrl = rtrim((string) config('services.nextcloud.storage_url'), '/');
+        $this->username = (string) config('services.nextcloud.username');
+        $this->password = (string) config('services.nextcloud.password');
+        $this->folder = (string) config('services.nextcloud.folder');
     }
 
     /**
      * Upload a file to Nextcloud.
      *
-     * @param  UploadedFile|string  $file     UploadedFile instance or absolute local path
-     * @param  string|null          $filename Destination filename (defaults to original name)
-     * @param  string|null          $subfolder Optional subfolder inside the configured folder
+     * @param  UploadedFile|string  $file  UploadedFile instance or absolute local path
+     * @param  string|null  $filename  Destination filename (defaults to original name)
+     * @param  string|null  $subfolder  Optional subfolder inside the configured folder
      * @return array{success: bool, url: string|null, path: string|null, message: string}
      */
     public function upload(UploadedFile|string $file, ?string $filename = null, ?string $subfolder = null): array
     {
         try {
             $isUploadedFile = $file instanceof UploadedFile;
-            $filename       = $filename ?? ($isUploadedFile ? $file->getClientOriginalName() : basename($file));
-            $mimeType       = $isUploadedFile ? $file->getMimeType() : mime_content_type($file);
-            $contents       = $isUploadedFile ? $file->get() : file_get_contents($file);
+            $filename = $filename ?? ($isUploadedFile ? $file->getClientOriginalName() : basename($file));
+            $mimeType = $isUploadedFile ? $file->getMimeType() : mime_content_type($file);
+            $contents = $isUploadedFile ? $file->get() : file_get_contents($file);
 
             $remotePath = $this->buildRemotePath($filename, $subfolder);
-            $uploadUrl  = "{$this->baseUrl}/{$remotePath}";
+            $uploadUrl = "{$this->getDavBaseUrl()}/{$this->encodeRemotePath($remotePath)}";
 
             // Ensure the target folder exists before uploading
             $this->ensureFolder($subfolder);
@@ -52,22 +56,22 @@ class NextcloudService
             if ($response->successful()) {
                 return [
                     'success' => true,
-                    'url'     => $this->getPublicUrl($remotePath),
-                    'path'    => $remotePath,
+                    'url' => $this->getPublicUrl($remotePath),
+                    'path' => $remotePath,
                     'message' => 'File uploaded successfully.',
                 ];
             }
 
             Log::error('Nextcloud upload failed', [
-                'status'  => $response->status(),
-                'url'     => $uploadUrl,
-                'body'    => $response->body(),
+                'status' => $response->status(),
+                'url' => $uploadUrl,
+                'body' => $response->body(),
             ]);
 
             return [
                 'success' => false,
-                'url'     => null,
-                'path'    => null,
+                'url' => null,
+                'path' => null,
                 'message' => "Upload failed with status {$response->status()}.",
             ];
         } catch (\Throwable $e) {
@@ -75,8 +79,8 @@ class NextcloudService
 
             return [
                 'success' => false,
-                'url'     => null,
-                'path'    => null,
+                'url' => null,
+                'path' => null,
                 'message' => $e->getMessage(),
             ];
         }
@@ -88,18 +92,18 @@ class NextcloudService
      * The file is PUT to the exact $remotePath provided, replacing whatever is there.
      * If the file does not yet exist it will be created (same as upload).
      *
-     * @param  UploadedFile|string $file       New file contents
-     * @param  string              $remotePath Full remote path to overwrite (e.g. "ess-franchise-uploads/clients/doc.pdf")
+     * @param  UploadedFile|string  $file  New file contents
+     * @param  string  $remotePath  Full remote path to overwrite (e.g. "ess-franchise-uploads/clients/doc.pdf")
      * @return array{success: bool, url: string|null, path: string|null, message: string}
      */
     public function update(UploadedFile|string $file, string $remotePath): array
     {
         try {
             $isUploadedFile = $file instanceof UploadedFile;
-            $mimeType       = $isUploadedFile ? $file->getMimeType() : mime_content_type($file);
-            $contents       = $isUploadedFile ? $file->get() : file_get_contents($file);
+            $mimeType = $isUploadedFile ? $file->getMimeType() : mime_content_type($file);
+            $contents = $isUploadedFile ? $file->get() : file_get_contents($file);
 
-            $uploadUrl = "{$this->baseUrl}/{$remotePath}";
+            $uploadUrl = "{$this->getDavBaseUrl()}/{$this->encodeRemotePath($remotePath)}";
 
             $response = Http::withBasicAuth($this->username, $this->password)
                 ->withBody($contents, $mimeType)
@@ -108,22 +112,22 @@ class NextcloudService
             if ($response->successful()) {
                 return [
                     'success' => true,
-                    'url'     => $this->getPublicUrl($remotePath),
-                    'path'    => $remotePath,
+                    'url' => $this->getPublicUrl($remotePath),
+                    'path' => $remotePath,
                     'message' => 'File updated successfully.',
                 ];
             }
 
             Log::error('Nextcloud update failed', [
-                'status'  => $response->status(),
-                'url'     => $uploadUrl,
-                'body'    => $response->body(),
+                'status' => $response->status(),
+                'url' => $uploadUrl,
+                'body' => $response->body(),
             ]);
 
             return [
                 'success' => false,
-                'url'     => null,
-                'path'    => null,
+                'url' => null,
+                'path' => null,
                 'message' => "Update failed with status {$response->status()}.",
             ];
         } catch (\Throwable $e) {
@@ -131,8 +135,8 @@ class NextcloudService
 
             return [
                 'success' => false,
-                'url'     => null,
-                'path'    => null,
+                'url' => null,
+                'path' => null,
                 'message' => $e->getMessage(),
             ];
         }
@@ -141,13 +145,13 @@ class NextcloudService
     /**
      * Delete a file from Nextcloud.
      *
-     * @param  string $remotePath Path relative to the storage URL (e.g. "folder/file.pdf")
+     * @param  string  $remotePath  Path relative to the storage URL (e.g. "folder/file.pdf")
      */
     public function delete(string $remotePath): bool
     {
         try {
             $response = Http::withBasicAuth($this->username, $this->password)
-                ->delete("{$this->baseUrl}/{$remotePath}");
+                ->delete("{$this->getDavBaseUrl()}/{$this->encodeRemotePath($remotePath)}");
 
             return $response->successful();
         } catch (\Throwable $e) {
@@ -164,7 +168,7 @@ class NextcloudService
     {
         try {
             $response = Http::withBasicAuth($this->username, $this->password)
-                ->send('PROPFIND', "{$this->baseUrl}/{$remotePath}");
+                ->send('PROPFIND', "{$this->getDavBaseUrl()}/{$this->encodeRemotePath($remotePath)}");
 
             return $response->status() === 207;
         } catch (\Throwable $e) {
@@ -177,12 +181,13 @@ class NextcloudService
      */
     public function makeFolder(string $folderPath): bool
     {
-        $parts       = explode('/', trim($folderPath, '/'));
+        $parts = explode('/', trim($folderPath, '/'));
         $accumulated = '';
+        $davBaseUrl = $this->getDavBaseUrl();
 
         foreach ($parts as $part) {
-            $accumulated .= '/' . $part;
-            $url          = "{$this->baseUrl}{$accumulated}";
+            $accumulated .= '/'.$part;
+            $url = "{$davBaseUrl}/{$this->encodeRemotePath(ltrim($accumulated, '/'))}";
 
             if (! $this->exists(ltrim($accumulated, '/'))) {
                 $response = Http::withBasicAuth($this->username, $this->password)
@@ -202,13 +207,13 @@ class NextcloudService
     /**
      * List files and folders inside a remote path.
      *
-     * @param  string|null $remotePath Path relative to the storage URL. Defaults to the configured folder.
+     * @param  string|null  $remotePath  Path relative to the storage URL. Defaults to the configured folder.
      * @return array{success: bool, items: array|null, message: string}
      */
     public function listFiles(?string $remotePath = null): array
     {
         $remotePath = $remotePath ?? $this->folder;
-        $url        = "{$this->baseUrl}/{$remotePath}";
+        $url = "{$this->getDavBaseUrl()}/{$this->encodeRemotePath($remotePath)}";
 
         try {
             $response = Http::withBasicAuth($this->username, $this->password)
@@ -218,12 +223,12 @@ class NextcloudService
             if ($response->status() !== 207) {
                 Log::error('Nextcloud PROPFIND failed', [
                     'status' => $response->status(),
-                    'url'    => $url,
+                    'url' => $url,
                 ]);
 
                 return [
                     'success' => false,
-                    'items'   => null,
+                    'items' => null,
                     'message' => "Failed to list files (status {$response->status()}).",
                 ];
             }
@@ -232,7 +237,7 @@ class NextcloudService
 
             return [
                 'success' => true,
-                'items'   => $items,
+                'items' => $items,
                 'message' => 'Files retrieved successfully.',
             ];
         } catch (\Throwable $e) {
@@ -240,7 +245,7 @@ class NextcloudService
 
             return [
                 'success' => false,
-                'items'   => null,
+                'items' => null,
                 'message' => $e->getMessage(),
             ];
         }
@@ -252,15 +257,15 @@ class NextcloudService
      */
     private function parsePropfindResponse(string $xml, string $requestedPath): array
     {
-        $dom = new \DOMDocument();
+        $dom = new \DOMDocument;
         @$dom->loadXML($xml);
 
         $xpath = new \DOMXPath($dom);
         $xpath->registerNamespace('d', 'DAV:');
 
-        $responses     = $xpath->query('//d:response');
+        $responses = $xpath->query('//d:response');
         $encodedFolder = rawurlencode(trim($requestedPath, '/'));
-        $items         = [];
+        $items = [];
 
         foreach ($responses as $index => $node) {
             $href = trim($xpath->evaluate('string(d:href)', $node));
@@ -270,25 +275,25 @@ class NextcloudService
                 continue;
             }
 
-            $displayName   = $xpath->evaluate('string(d:propstat/d:prop/d:displayname)', $node);
+            $displayName = $xpath->evaluate('string(d:propstat/d:prop/d:displayname)', $node);
             $contentLength = $xpath->evaluate('string(d:propstat/d:prop/d:getcontentlength)', $node);
-            $contentType   = $xpath->evaluate('string(d:propstat/d:prop/d:getcontenttype)', $node);
-            $lastModified  = $xpath->evaluate('string(d:propstat/d:prop/d:getlastmodified)', $node);
-            $etag          = $xpath->evaluate('string(d:propstat/d:prop/d:getetag)', $node);
-            $isCollection  = $xpath->query('d:propstat/d:prop/d:resourcetype/d:collection', $node)->length > 0;
+            $contentType = $xpath->evaluate('string(d:propstat/d:prop/d:getcontenttype)', $node);
+            $lastModified = $xpath->evaluate('string(d:propstat/d:prop/d:getlastmodified)', $node);
+            $etag = $xpath->evaluate('string(d:propstat/d:prop/d:getetag)', $node);
+            $isCollection = $xpath->query('d:propstat/d:prop/d:resourcetype/d:collection', $node)->length > 0;
 
-            $filename   = $displayName ?: basename(rtrim($href, '/'));
+            $filename = $displayName ?: basename(rtrim($href, '/'));
             $remotePath = ltrim(parse_url($href, PHP_URL_PATH), '/');
 
             $items[] = [
-                'name'          => $filename,
-                'path'          => $remotePath,
-                'url'           => "{$this->baseUrl}{$href}",
-                'type'          => $isCollection ? 'folder' : 'file',
-                'size'          => $contentLength !== '' ? (int) $contentLength : null,
-                'mime_type'     => $contentType ?: null,
+                'name' => $filename,
+                'path' => $remotePath,
+                'url' => "{$this->baseUrl}{$href}",
+                'type' => $isCollection ? 'folder' : 'file',
+                'size' => $contentLength !== '' ? (int) $contentLength : null,
+                'mime_type' => $contentType ?: null,
                 'last_modified' => $lastModified ?: null,
-                'etag'          => $etag ?: null,
+                'etag' => $etag ?: null,
             ];
         }
 
@@ -317,6 +322,32 @@ class NextcloudService
 
     private function getPublicUrl(string $remotePath): string
     {
-        return "{$this->baseUrl}/remote.php/dav/files/{$this->username}/{$remotePath}";
+        $publicBase = $this->storageUrl !== '' ? $this->storageUrl : $this->getDavBaseUrl();
+
+        return rtrim($publicBase, '/').'/'.$this->encodeRemotePath($remotePath);
+    }
+
+    private function getDavBaseUrl(): string
+    {
+        if ($this->storageUrl !== '' && str_contains($this->storageUrl, '/remote.php/dav/files/')) {
+            return rtrim($this->storageUrl, '/');
+        }
+
+        if ($this->baseUrl !== '' && str_contains($this->baseUrl, '/remote.php/dav/files/')) {
+            return rtrim($this->baseUrl, '/');
+        }
+
+        return rtrim($this->baseUrl, '/').'/remote.php/dav/files/'.rawurlencode($this->username);
+    }
+
+    private function encodeRemotePath(string $path): string
+    {
+        return implode(
+            '/',
+            array_map(
+                static fn (string $segment): string => rawurlencode($segment),
+                array_filter(explode('/', trim($path, '/')), static fn (string $segment): bool => $segment !== '')
+            )
+        );
     }
 }

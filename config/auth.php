@@ -42,6 +42,16 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        /*
+         * Spatie roles/permissions in this app use guard_name `api`.
+         * The API itself authenticates via Sanctum, but we still define an `api`
+         * guard so Spatie can resolve the user model for that guard.
+         */
+        'api' => [
+            'driver' => 'session',
+            'provider' => 'users',
+        ],
     ],
 
     /*

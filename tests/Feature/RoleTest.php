@@ -10,6 +10,18 @@ uses(RefreshDatabase::class);
 beforeEach(function () {
     $this->user = User::factory()->create();
     $this->actingAs($this->user);
+
+    Permission::firstOrCreate(['name' => 'role.view', 'guard_name' => 'api']);
+    Permission::firstOrCreate(['name' => 'role.create', 'guard_name' => 'api']);
+    Permission::firstOrCreate(['name' => 'role.update', 'guard_name' => 'api']);
+    Permission::firstOrCreate(['name' => 'role.delete', 'guard_name' => 'api']);
+
+    $this->user->givePermissionTo([
+        'role.view',
+        'role.create',
+        'role.update',
+        'role.delete',
+    ]);
 });
 
 it('can list all roles', function () {
@@ -72,7 +84,7 @@ it('can update a role', function () {
 });
 
 it('can update a role and sync permissions', function () {
-    $permission = Permission::create(['name' => 'user.delete', 'guard_name' => 'web']);
+    $permission = Permission::create(['name' => 'user.delete', 'guard_name' => 'api']);
     $role = Role::create(['name' => 'admin', 'guard_name' => 'api']);
 
     $this->putJson("/api/roles/{$role->id}", [
@@ -84,7 +96,7 @@ it('can update a role and sync permissions', function () {
 });
 
 it('can delete a role', function () {
-    $role = Role::create(['name' => 'admin', 'guard_name' => 'web']);
+    $role = Role::create(['name' => 'admin', 'guard_name' => 'api']);
 
     $this->deleteJson("/api/roles/{$role->id}")
         ->assertSuccessful()
@@ -94,8 +106,8 @@ it('can delete a role', function () {
 });
 
 it('can list permissions for a role', function () {
-    $permission = Permission::create(['name' => 'user.view', 'guard_name' => 'web']);
-    $role = Role::create(['name' => 'viewer', 'guard_name' => 'web']);
+    $permission = Permission::create(['name' => 'user.view', 'guard_name' => 'api']);
+    $role = Role::create(['name' => 'viewer', 'guard_name' => 'api']);
     $role->givePermissionTo('user.view');
 
     $this->getJson("/api/roles/{$role->id}/permissions")

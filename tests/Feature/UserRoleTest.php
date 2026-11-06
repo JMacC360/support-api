@@ -11,6 +11,14 @@ beforeEach(function () {
     $this->actor = User::factory()->create();
     $this->actingAs($this->actor);
 
+    Permission::firstOrCreate(['name' => 'user.view', 'guard_name' => 'api']);
+    Permission::firstOrCreate(['name' => 'user.assign-role', 'guard_name' => 'api']);
+
+    $this->actor->givePermissionTo([
+        'user.view',
+        'user.assign-role',
+    ]);
+
     $this->targetUser = User::factory()->create();
 });
 
@@ -46,7 +54,7 @@ it('validates roles exist when syncing', function () {
 });
 
 it('can list all permissions for a user', function () {
-    $permission = Permission::create(['name' => 'user.view', 'guard_name' => 'api']);
+    $permission = Permission::firstOrCreate(['name' => 'user.view', 'guard_name' => 'api']);
     $role = Role::create(['name' => 'viewer', 'guard_name' => 'api']);
     $role->givePermissionTo('user.view');
     $this->targetUser->assignRole('viewer');
@@ -58,8 +66,8 @@ it('can list all permissions for a user', function () {
 });
 
 it('can sync direct permissions for a user', function () {
-    Permission::create(['name' => 'user.view', 'guard_name' => 'api']);
-    Permission::create(['name' => 'user.create', 'guard_name' => 'api']);
+    Permission::firstOrCreate(['name' => 'user.view', 'guard_name' => 'api']);
+    Permission::firstOrCreate(['name' => 'user.create', 'guard_name' => 'api']);
 
     $this->targetUser->givePermissionTo('user.view');
 
